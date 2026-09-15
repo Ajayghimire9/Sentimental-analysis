@@ -1,0 +1,17 @@
+groups:
+  - name: sentiment-api
+    rules:
+      - alert: SentimentApiDown
+        expr: up{job="sentiment-api"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Sentiment API is unavailable
+      - alert: SentimentHighLatency
+        expr: histogram_quantile(0.95, rate(sentiment_request_latency_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Sentiment API p95 latency is above one second
