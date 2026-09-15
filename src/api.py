@@ -6,17 +6,15 @@ import time
 
 import mlflow
 from fastapi import FastAPI, HTTPException
+from mlflow import MlflowClient
 from pydantic import BaseModel, Field
 from prometheus_client import Counter, Histogram, generate_latest
 from starlette.responses import Response
-
-from src.model import build_model
 
 app = FastAPI(title="Sentiment Intelligence API", version="2.0.0")
 REQUESTS = Counter("sentiment_requests_total", "Total sentiment inference requests")
 LATENCY = Histogram("sentiment_request_latency_seconds", "Inference latency in seconds")
 PREDICTIONS = Counter("sentiment_predictions_total", "Predictions by class", ["label"])
-
 _model = None
 
 
@@ -29,14 +27,18 @@ def get_model():
     if _model is not None:
         return _model
     uri = os.getenv("MLFLOW_TRACKING_URI")
-    if uri:
-        mlflow.set_tracking_uri(uri)
-        try:
-            _model = mlflow.pyfunc.load_model("models:/sentiment-classifier@champion")
-            return _model
-        except Exception:
-            pass
-    raise RuntimeError("No champion model available. Train and register the model first.")
+    if not uri:
+        raise RuntimeError("MLFLOW_TRACKING_URI must point to the model registry")
+    mlflow.set_tracking_uri(uri)
+    try:
+        _model = mlflow.pyfunc.load_model("models:/sentiment-classifier@champion")
+    except Exception:
+        versions = MlflowClient().search_model_versions("name='sentiment-classifier'")
+        if not versions:
+            raise RuntimeError("No registered sentiment model is available")
+        latest = max(versions, key=lambda item: int(item.version))
+        _model = mlflow.pyfunc.load_model(f"models:/sentiment-classifier/{latest.version}")
+    return _model
 
 
 @app.get("/health")
@@ -54,10 +56,8 @@ def predict(request: PredictionRequest):
     REQUESTS.inc()
     started = time.perf_counter()
     try:
-        model = get_model()
-        prediction = int(model.predict([request.text])[0])
-        labels = {0: "negative", 1: "neutral", 2: "positive"}
-        label = labels[prediction]
+        prediction = int(get_model().predict([request.text])[0])
+        label = {0: "negative", 1: "neutral", 2: "positive"}[prediction]
         PREDICTIONS.labels(label=label).inc()
         return {"label": label, "class_id": prediction, "text_length": len(request.text)}
     except Exception as exc:
