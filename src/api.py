@@ -1,4 +1,5 @@
 """FastAPI inference service for the registered sentiment model."""
+
 from __future__ import annotations
 
 import os
@@ -6,9 +7,8 @@ import time
 
 import mlflow
 from fastapi import FastAPI, HTTPException
-from mlflow import MlflowClient
-from pydantic import BaseModel, Field
 from prometheus_client import Counter, Histogram, generate_latest
+from pydantic import BaseModel, Field
 from starlette.responses import Response
 
 app = FastAPI(title="Sentiment Intelligence API", version="2.0.0")
@@ -30,14 +30,7 @@ def get_model():
     if not uri:
         raise RuntimeError("MLFLOW_TRACKING_URI must point to the model registry")
     mlflow.set_tracking_uri(uri)
-    try:
-        _model = mlflow.pyfunc.load_model("models:/sentiment-classifier@champion")
-    except Exception:
-        versions = MlflowClient().search_model_versions("name='sentiment-classifier'")
-        if not versions:
-            raise RuntimeError("No registered sentiment model is available")
-        latest = max(versions, key=lambda item: int(item.version))
-        _model = mlflow.pyfunc.load_model(f"models:/sentiment-classifier/{latest.version}")
+    _model = mlflow.pyfunc.load_model("models:/sentiment-classifier@champion")
     return _model
 
 
@@ -61,6 +54,17 @@ def predict(request: PredictionRequest):
         PREDICTIONS.labels(label=label).inc()
         return {"label": label, "class_id": prediction, "text_length": len(request.text)}
     except Exception as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=503, detail="Approved model unavailable or inference failed"
+        ) from exc
     finally:
         LATENCY.observe(time.perf_counter() - started)
+
+
+@app.get("/ready")
+def ready():
+    try:
+        get_model()
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail="Approved model unavailable") from exc
+    return {"ready": True}
