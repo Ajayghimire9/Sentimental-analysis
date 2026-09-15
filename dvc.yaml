@@ -1,0 +1,14 @@
+stages:
+  validate:
+    cmd: python -m src.data
+    outs:
+      - reports/data_validation.marker
+  train:
+    cmd: python -m src.train --limit 10000
+    deps:
+      - src/data.py
+      - src/text.py
+      - src/model.py
+      - src/train.py
+    metrics:
+      - reports/metrics.json
