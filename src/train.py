@@ -1,4 +1,4 @@
-"""Reproducible training entry point with MLflow experiment tracking."""
+"""Reproducible training entry point with MLflow tracking."""
 from __future__ import annotations
 
 import argparse
@@ -12,13 +12,14 @@ from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_sc
 from src.data import load_tweet_eval, validate_dataset
 from src.model import build_model
 
+MODEL_NAME = "sentiment-classifier"
+
 
 def train(limit: int | None = None) -> dict[str, float]:
     train_df = load_tweet_eval("train", limit)
     test_df = load_tweet_eval("test", limit)
     validate_dataset(train_df)
     validate_dataset(test_df)
-
     model = build_model()
     model.fit(train_df["text"], train_df["label"])
     pred = model.predict(test_df["text"])
@@ -28,13 +29,18 @@ def train(limit: int | None = None) -> dict[str, float]:
         "macro_precision": float(precision_score(test_df["label"], pred, average="macro", zero_division=0)),
         "macro_recall": float(recall_score(test_df["label"], pred, average="macro", zero_division=0)),
     }
-
     mlflow.set_experiment("sentiment-intelligence")
-    with mlflow.start_run(run_name="tfidf-logistic-regression"):
-        mlflow.log_params({"model": "logistic_regression", "features": "tfidf", "ngram_range": "1-2", "train_limit": limit or "full"})
+    with mlflow.start_run(run_name="tfidf-logistic-regression") as run:
+        mlflow.log_params({
+            "model": "logistic_regression",
+            "features": "tfidf",
+            "ngram_range": "1-2",
+            "train_limit": limit or "full",
+        })
         mlflow.log_metrics(metrics)
-        mlflow.sklearn.log_model(model, "model", registered_model_name="sentiment-classifier")
-
+        mlflow.sklearn.log_model(model, "model", registered_model_name=MODEL_NAME)
+        mlflow.set_tag("selection_metric", "macro_f1")
+        mlflow.set_tag("run_id_for_registry", run.info.run_id)
     Path("reports").mkdir(exist_ok=True)
     Path("reports/metrics.json").write_text(json.dumps(metrics, indent=2), encoding="utf-8")
     return metrics
