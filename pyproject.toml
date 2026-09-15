@@ -1,7 +1,7 @@
 [project]
-name = "sentiment-intelligence-platform"
-version = "2.0.0"
-description = "Production-style NLP sentiment classification platform with reproducible training, MLflow tracking, and FastAPI serving"
+name = "sentinel-nlp-platform"
+version = "3.0.0"
+description = "SentinelNLP: production-style sentiment intelligence platform with classical NLP, transformer benchmarking, MLOps, observability, and Kubernetes deployment"
 requires-python = ">=3.10"
 dependencies = [
   "numpy>=1.26,<3",
@@ -17,6 +17,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8,<9", "ruff>=0.6,<1"]
+transformer = ["transformers>=4.45,<5", "torch>=2.4,<3"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
