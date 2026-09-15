@@ -1,0 +1,10 @@
+{
+  "title": "Sentiment Intelligence API",
+  "schemaVersion": 39,
+  "panels": [
+    {"type": "stat", "title": "API Up", "targets": [{"expr": "up{job=\"sentiment-api\"}"}]},
+    {"type": "timeseries", "title": "Request Rate", "targets": [{"expr": "rate(sentiment_requests_total[5m])"}]},
+    {"type": "timeseries", "title": "P95 Latency", "targets": [{"expr": "histogram_quantile(0.95, rate(sentiment_request_latency_seconds_bucket[5m]))"}]},
+    {"type": "timeseries", "title": "Predictions", "targets": [{"expr": "sum by (label) (rate(sentiment_predictions_total[5m]))"}]}
+  ]
+}

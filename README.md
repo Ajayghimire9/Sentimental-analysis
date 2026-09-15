@@ -1,60 +1,232 @@
-# Sentimental-analysis
-Advanced Sentiment Analysis
-# Advanced Sentiment Analysis on Tweets
+# Sentiment Intelligence Platform
 
-This project aims to perform advanced sentiment analysis on tweets from May 2009. The analysis includes data filtering, enhanced data visualization, advanced data preprocessing, hyperparameter tuning, and model evaluation.
+**End-to-end NLP / MLOps platform for social-media sentiment classification, experiment tracking, model governance, API serving, monitoring, drift detection, containerization, and automated retraining.**
 
-## Project Structure
+[![CI](https://github.com/Ajayghimire9/Sentimental-analysis/actions/workflows/ci.yml/badge.svg)](https://github.com/Ajayghimire9/Sentimental-analysis/actions/workflows/ci.yml)
 
-1. **Data Filtering**: Filter the dataset to include only tweets from May 2009.
-2. **Enhanced Data Visualization**: Visualize the distribution of sentiments and the time-series plot of tweets over May 2009.
-3. **Advanced Data Preprocessing**: Perform text cleaning and feature extraction using TF-IDF with additional parameters.
-4. **Advanced Model Training**: Train machine learning models with hyperparameter tuning using GridSearchCV.
-5. **Model Evaluation**: Evaluate the models using accuracy, precision, recall, and F1-score.
+## Executive summary
 
-## Libraries Used
+This repository was rebuilt from a university-style sentiment-analysis script into an engineering portfolio project. It demonstrates the complete ML lifecycle rather than only model training: reproducible data acquisition, validation, NLP preprocessing, model evaluation, experiment tracking, model registry integration, REST serving, observability, drift analysis, Docker/Kubernetes deployment, testing, and automated retraining.
 
-- Pandas
-- Matplotlib
-- Seaborn
-- scikit-learn
+## System architecture
 
-## Models Used
+```text
+                 ┌──────────────────────┐
+                 │ TweetEval benchmark  │
+                 └──────────┬───────────┘
+                            ↓
+                 Data validation layer
+                            ↓
+                 Text normalization
+                            ↓
+              ┌─────────────┴─────────────┐
+              │                           │
+       TF-IDF + LR                 Transformer-ready
+       production baseline             extension point
+              │
+              ↓
+       Evaluation / reports
+              ↓
+          MLflow Tracking
+              ↓
+        Model Registry
+              ↓
+       FastAPI inference
+              ↓
+      ┌───────┴────────┐
+      ↓                ↓
+ Prometheus         Drift monitor
+      ↓                ↓
+ Grafana          investigation
+      │
+      └──── Docker / Kubernetes
+               ↓
+        GitHub Actions CI
+               ↓
+        Scheduled retraining
+```
 
-1. Optimized Logistic Regression
-2. Optimized Bernoulli Naive Bayes
-3. Simple Neural Networks
+## What this project demonstrates
 
-## Performance Metrics
+### 1. Data engineering for ML
+- Reproducible public dataset acquisition through Hugging Face Datasets
+- Explicit dataset schema validation
+- No hard-coded Windows/local filesystem paths
+- Large datasets kept outside Git
+- Deterministic training inputs
 
-The performance of the models is measured using accuracy, precision, recall, and F1-score for both negative and positive sentiments.
+### 2. NLP / machine learning
+- Social-media text normalization
+- URL and user-mention normalization
+- TF-IDF unigram/bigram features
+- Class-balanced Logistic Regression
+- Multiclass sentiment classification
+- Accuracy, Macro-F1, precision and recall
+- Reproducible random state
 
-### Optimized Logistic Regression
+### 3. MLOps
+- MLflow experiment tracking
+- Registered model: `sentiment-classifier`
+- Training metadata and metrics
+- Model artifact logging
+- Candidate/champion model workflow ready for registry aliases
+- Scheduled retraining
+- Metrics published as CI artifacts
 
-- **Accuracy**: 74.01%
-- **Precision**: 67% (Negative), 78% (Positive)
-- **Recall**: 60% (Negative), 82% (Positive)
-- **F1-Score**: 63% (Negative), 80% (Positive)
+### 4. Model monitoring
+- Prometheus request counter
+- Prediction counters by sentiment
+- Inference latency histogram
+- Population Stability Index utility for detecting distribution changes
+- Health endpoint for service availability
 
-### Optimized Bernoulli Naive Bayes
+### 5. Production API
 
-- **Accuracy**: 74.95%
-- **Precision**: 69% (Negative), 78% (Positive)
-- **Recall**: 59% (Negative), 84% (Positive)
-- **F1-Score**: 64% (Negative), 81% (Positive)
+FastAPI exposes:
 
-### Simple Neural Networks
+| Endpoint | Purpose |
+|---|---|
+| `GET /health` | service health |
+| `POST /predict` | sentiment inference |
+| `GET /metrics` | Prometheus metrics |
 
-- **Accuracy**: 75.47%
-- **Precision**: 74% (Negative), 76% (Positive)
-- **Recall**: 53% (Negative), 89% (Positive)
-- **F1-Score**: 62% (Negative), 82% (Positive)
+Example:
 
-## Usage
+```bash
+curl -X POST http://localhost:8000/predict \
+  -H 'Content-Type: application/json' \
+  -d '{"text":"The product is excellent and I love it!"}'
+```
 
-1. Load the dataset and filter it to include only tweets from May 2009.
-2. Run the data visualization scripts to understand the distribution of data.
-3. Run the data preprocessing scripts to prepare the data for machine learning models.
-4. Run the model training and hyperparameter tuning scripts.
-5. Evaluate the models and interpret the results.
-6. """ 
+### 6. DevOps / platform engineering
+- Dockerized inference service
+- Kubernetes Deployment
+- Two API replicas
+- CPU/memory requests and limits
+- Readiness and liveness probes
+- Kubernetes Service
+- Prometheus scrape configuration
+- GitHub Actions CI
+- Weekly retraining workflow
+
+## Project structure
+
+```text
+.
+├── src/
+│   ├── api.py                 # FastAPI inference service
+│   ├── data.py                # data loading + schema validation
+│   ├── drift.py               # PSI-based drift utility
+│   ├── model.py               # TF-IDF + Logistic Regression
+│   ├── text.py                # shared preprocessing
+│   └── train.py               # training + MLflow logging
+├── tests/
+│   ├── test_drift.py
+│   └── test_text.py
+├── monitoring/
+│   └── prometheus.yml
+├── k8s/
+│   └── deployment.yaml
+├── .github/workflows/
+│   ├── ci.yml
+│   └── retrain.yml
+├── Dockerfile
+├── Makefile
+├── pyproject.toml
+└── README.md
+```
+
+## Local development
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -e '.[dev]'
+```
+
+Run tests:
+
+```bash
+make test
+```
+
+Run linting:
+
+```bash
+make lint
+```
+
+Train a development model:
+
+```bash
+make train
+```
+
+Run the API:
+
+```bash
+make api
+```
+
+## MLflow
+
+Set the tracking server before training when using a remote MLflow deployment:
+
+```bash
+export MLFLOW_TRACKING_URI=http://localhost:5000
+python -m src.train --limit 10000
+```
+
+The training process records model configuration and evaluation metrics and registers the resulting model as `sentiment-classifier`.
+
+## Kubernetes
+
+Build the image and apply the deployment in a local Kubernetes environment such as Docker Desktop or Minikube:
+
+```bash
+docker build -t sentiment-intelligence:latest .
+kubectl apply -f k8s/deployment.yaml
+kubectl get pods
+kubectl get service sentiment-api
+```
+
+The deployment is intentionally infrastructure-neutral: cloud-specific registries, credentials, and clusters are supplied by the deployment environment rather than committed to Git.
+
+## CI/CD
+
+Pull requests and pushes execute:
+
+1. Python environment setup
+2. Dependency installation
+3. Ruff linting
+4. pytest
+
+A weekly GitHub Actions workflow can execute the training pipeline. A remote MLflow tracking URI can be supplied through the repository's Actions secret configuration.
+
+## Model governance
+
+The serving layer prefers the MLflow `champion` alias. This is a deliberate separation between **training** and **serving**: an API should not need to know which numeric model version is currently deployed.
+
+For a real production deployment, promotion should be gated by an evaluation threshold and human/automated approval rather than blindly promoting every scheduled run.
+
+## Why TF-IDF instead of pretending this is a transformer project?
+
+TF-IDF + Logistic Regression is an excellent interpretable and inexpensive production baseline. The architecture deliberately keeps the model behind a pipeline boundary so a transformer such as DistilBERT can be evaluated against the baseline later using the same metrics and MLflow workflow.
+
+This is stronger portfolio engineering than adding a transformer dependency without demonstrating model comparison or operational value.
+
+## Technology stack
+
+**Python · Pandas · NumPy · scikit-learn · Hugging Face Datasets · MLflow · FastAPI · Pydantic · Prometheus · Docker · Kubernetes · GitHub Actions · pytest · Ruff · Git**
+
+Every technology listed here is represented by repository implementation or deployment configuration.
+
+## Portfolio story
+
+This project demonstrates progression from **data → NLP → ML → MLOps → API → observability → deployment → automation**.
+
+It is intended to complement the time-series forecasting project rather than duplicate it.
+
+## License
+
+MIT
