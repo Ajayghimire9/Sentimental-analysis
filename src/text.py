@@ -1,4 +1,5 @@
 """Deterministic text normalization used by both training and inference."""
+
 from __future__ import annotations
 
 import re
