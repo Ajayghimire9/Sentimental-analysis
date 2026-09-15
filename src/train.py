@@ -1,4 +1,5 @@
 """Reproducible training entry point with MLflow tracking."""
+
 from __future__ import annotations
 
 import argparse
@@ -26,17 +27,23 @@ def train(limit: int | None = None) -> dict[str, float]:
     metrics = {
         "accuracy": float(accuracy_score(test_df["label"], pred)),
         "macro_f1": float(f1_score(test_df["label"], pred, average="macro")),
-        "macro_precision": float(precision_score(test_df["label"], pred, average="macro", zero_division=0)),
-        "macro_recall": float(recall_score(test_df["label"], pred, average="macro", zero_division=0)),
+        "macro_precision": float(
+            precision_score(test_df["label"], pred, average="macro", zero_division=0)
+        ),
+        "macro_recall": float(
+            recall_score(test_df["label"], pred, average="macro", zero_division=0)
+        ),
     }
     mlflow.set_experiment("sentiment-intelligence")
     with mlflow.start_run(run_name="tfidf-logistic-regression") as run:
-        mlflow.log_params({
-            "model": "logistic_regression",
-            "features": "tfidf",
-            "ngram_range": "1-2",
-            "train_limit": limit or "full",
-        })
+        mlflow.log_params(
+            {
+                "model": "logistic_regression",
+                "features": "tfidf",
+                "ngram_range": "1-2",
+                "train_limit": limit or "full",
+            }
+        )
         mlflow.log_metrics(metrics)
         mlflow.sklearn.log_model(model, "model", registered_model_name=MODEL_NAME)
         mlflow.set_tag("selection_metric", "macro_f1")
@@ -48,7 +55,9 @@ def train(limit: int | None = None) -> dict[str, float]:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--limit", type=int, default=None, help="Optional sample size for local development")
+    parser.add_argument(
+        "--limit", type=int, default=None, help="Optional sample size for local development"
+    )
     args = parser.parse_args()
     print(json.dumps(train(args.limit), indent=2))
 
