@@ -1,9 +1,11 @@
 """Dataset loading and validation."""
+
 from __future__ import annotations
 
 from pathlib import Path
-from datasets import load_dataset
+
 import pandas as pd
+from datasets import load_dataset
 
 LABELS = {0: "negative", 1: "neutral", 2: "positive"}
 
