@@ -1,10 +1,13 @@
 """Lightweight population-stability monitoring for text length and sentiment labels."""
+
 from __future__ import annotations
 
 import numpy as np
 
 
-def population_stability_index(reference: list[float], current: list[float], bins: int = 10) -> float:
+def population_stability_index(
+    reference: list[float], current: list[float], bins: int = 10
+) -> float:
     """Compute PSI; values above ~0.2 can be investigated as meaningful drift."""
     if not reference or not current:
         raise ValueError("Both populations must contain observations")
